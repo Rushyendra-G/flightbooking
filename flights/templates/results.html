@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Flight Search Results</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        .card {
+            border: 1px solid #007bff;
+            border-radius: 0.5rem;
+        }
+        .card-title {
+            color: #007bff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="mb-4">Flight Search Results</h1>
+
+        {% if outbound_cards %}
+            <h2>Outbound Flights ({{ outbound_cards|length }})</h2>
+            <div class="row">
+                {% for card in outbound_cards %}
+                    <div class="col-md-4 mb-4">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">Fare: {{ card.fare }} {{ card.currency }}</h5>
+                                <h6 class="card-subtitle mb-2 text-muted">Published Fare: {{ card.publishedFare }}</h6>
+                                <p class="card-text"><strong>Source:</strong> {{ card.Source }}</p>
+                                
+                                <h6>Segments:</h6>
+                                <ul class="list-group">
+                                    {% for segment in card.Segments %}
+                                        {% for key, value in segment.items %}
+                                            <li class="list-group-item">
+                                                <strong>Segment {{ loop.index }}:</strong>
+                                                <ul>
+                                                    <li><strong>Airline:</strong> {{ value.AirlineName }} ({{ value.AirlineCode }})</li>
+                                                    <li><strong>Flight Number:</strong> {{ value.FlightNumber }}</li>
+                                                    <li><strong>Departure:</strong> {{ value.DepartureTime }} ({{ value.OriginAirportName }})</li>
+                                                    <li><strong>Arrival:</strong> {{ value.ArrivalTime }} ({{ value.DestinationAirportName }})</li>
+                                                    <li><strong>Duration:</strong> {{ value.Duration }}</li>
+                                                    <li><strong>Baggage:</strong> {{ value.Baggage }} | <strong>Cabin Baggage:</strong> {{ value.CabinBaggage }}</li>
+                                                    <li><strong>Cabin Class:</strong> {{ value.CabinClass }}</li>
+                                                </ul>
+                                            </li>
+                                        {% endfor %}
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="alert alert-warning" role="alert">
+                No outbound flights found.
+            </div>
+        {% endif %}
+
+        {% if return_cards %}
+            <h2>Return Flights ({{ return_cards|length }})</h2>
+            <div class="row">
+                {% for card in return_cards %}
+                    <div class="col-md-4 mb-4">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">Fare: {{ card.fare }} {{ card.currency }}</h5>
+                                <h6 class="card-subtitle mb-2 text-muted">Published Fare: {{ card.publishedFare }}</h6>
+                                <p class="card-text"><strong>Source:</strong> {{ card.Source }}</p>
+                                
+                                <h6>Segments:</h6>
+                                <ul class="list-group">
+                                    {% for segment in card.Segments %}
+                                        {% for key, value in segment.items %}
+                                            <li class="list-group-item">
+                                                <strong>Segment {{ loop.index }}:</strong>
+                                                <ul>
+                                                    <li><strong>Airline:</strong> {{ value.AirlineName }} ({{ value.AirlineCode }})</li>
+                                                    <li><strong>Flight Number:</strong> {{ value.FlightNumber }}</li>
+                                                    <li><strong>Departure:</strong> {{ value.DepartureTime }} ({{ value.OriginAirportName }})</li>
+                                                    <li><strong>Arrival:</strong> {{ value.ArrivalTime }} ({{ value.DestinationAirportName }})</li>
+                                                    <li><strong>Duration:</strong> {{ value.Duration }}</li>
+                                                    <li><strong>Baggage:</strong> {{ value.Baggage }} | <strong>Cabin Baggage:</strong> {{ value.CabinBaggage }}</li>
+                                                    <li><strong>Cabin Class:</strong> {{ value.CabinClass }}</li>
+                                                </ul>
+                                            </li>
+                                        {% endfor %}
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="alert alert-warning" role="alert">
+                No return flights found.
+            </div>
+        {% endif %}
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>

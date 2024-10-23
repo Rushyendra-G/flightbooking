@@ -178,40 +178,49 @@
                 };
 
                 for (let i = 1; i <= flightSegmentCount; i++) {
+                    const origin = formData.get(`origin${i}`);
+                    const destination = formData.get(`destination${i}`);
                     const date = formData.get(`departureDate${i}`);
                     const time = formData.get(`departureTime${i}`);
                     const combinedDateTime = `${date}T${time}`;
 
-                    searchData.Segments.push({
-                        Origin: formData.get(`origin${i}`),
-                        Destination: formData.get(`destination${i}`),
-                        FlightCabinClass: parseInt(formData.get(`flightCabinClass${i}`)),
-                        PreferredDepartureTime: combinedDateTime,
-                        PreferredArrivalTime: combinedDateTime
-                    });
+                    // Only push valid segments
+                    if (origin && destination) {
+                        searchData.Segments.push({
+                            Origin: origin,
+                            Destination: destination,
+                            FlightCabinClass: parseInt(formData.get(`flightCabinClass${i}`)),
+                            PreferredDepartureTime: combinedDateTime,
+                            PreferredArrivalTime: combinedDateTime
+                        });
+                    }
                 }
 
                 // If Round Trip, add return flight details
                 if (searchData.JourneyType === 2) {
+                    const returnOrigin = document.getElementById('destination1').value;
+                    const returnDestination = document.getElementById('origin1').value;
                     const returnDate = formData.get('departureDate2');
                     const returnTime = formData.get('departureTime2');
                     const returnCombinedDateTime = `${returnDate}T${returnTime}`;
 
-                    searchData.Segments.push({
-                        Origin: document.getElementById('destination1').value,
-                        Destination: document.getElementById('origin1').value,
-                        FlightCabinClass: parseInt(formData.get('flightCabinClass2')),
-                        PreferredDepartureTime: returnCombinedDateTime,
-                        PreferredArrivalTime: returnCombinedDateTime
-                    });
+                    // Only push valid return flight segment
+                    if (returnOrigin && returnDestination) {
+                        searchData.Segments.push({
+                            Origin: returnOrigin,
+                            Destination: returnDestination,
+                            FlightCabinClass: parseInt(formData.get('flightCabinClass2')),
+                            PreferredDepartureTime: returnCombinedDateTime,
+                            PreferredArrivalTime: returnCombinedDateTime
+                        });
+                    }
                 }
 
-                // Here we would typically send this data to the API
+                // Log or process the search data as needed
                 console.log('Search Data:', searchData);
-                
-                // For tests, print body
                 document.getElementById('results').innerHTML = `<pre>${JSON.stringify(searchData, null, 2)}</pre>`;
             });
+
 
             journeyTypeSelect.addEventListener('change', updateFlightSegments);
     
