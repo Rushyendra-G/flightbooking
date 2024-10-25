@@ -1,232 +1,215 @@
 {% load static %}
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Flight Search</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 </head>
 <body>
     <div class="container mt-5">
-        <h1 class="mb-4">Flight Search</h1>
-        <form id="flightApiForm" method="post">
+        <h2 class="mb-4">Flight Search</h2>
+        
+        <!-- Journey Type Selection -->
+        <div class="btn-group mb-4" role="group">
+            <a href="?type=1" class="btn btn-{% if journey_type == '1' %}primary{% else %}outline-primary{% endif %}">
+                One Way
+            </a>
+            <a href="?type=2" class="btn btn-{% if journey_type == '2' %}primary{% else %}outline-primary{% endif %}">
+                Round Trip
+            </a>
+            <a href="?type=3" class="btn btn-{% if journey_type == '3' %}primary{% else %}outline-primary{% endif %}">
+                Multi City
+            </a>
+        </div>
+
+        <form method="post" id="flightSearchForm">
             {% csrf_token %}
-            {{ form.adult_count.label_tag }}
-            {{ form.adult_count }}
-            <div class="row mb-3">
-                <div class="col">
-                    {{ form.adult_count.label }}
-                    {{ form.adult_count }}
+            <input type="hidden" name="journey_type" value="{{ journey_type }}">
+            
+            <!-- Passenger Information -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Passenger Information</h5>
                 </div>
-                <div class="col">
-                    {{ form.child_count.label }}
-                    {{ form.child_count }}
-                </div>
-                <div class="col">
-                    {{ form.infant_count.label }}
-                    {{ form.infant_count }}
-                </div>
-            </div>
-
-            <div class="mb-3">
-                {{ form.journey_type.label }}
-                {{ form.journey_type }}
-            </div>
-
-            <div id="flightSegmentsContainer"></div>
-
-            <button type="button" id="addFlightSegment" class="btn btn-secondary mb-3" style="display: none;">Add Another Flight</button>
-
-            <div class="mb-3">
-                <div class="form-check">
-                    {{ form.direct_flight }}
-                    {{ form.direct_flight.label_tag }}
-                </div>
-                <div class="form-check">
-                    {{ form.one_stop_flight }}
-                    {{ form.one_stop_flight.label_tag }}
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <label>Adults</label>
+                            {{ form.adult_count }}
+                        </div>
+                        <div class="col-md-4">
+                            <label>Children</label>
+                            {{ form.child_count }}
+                        </div>
+                        <div class="col-md-4">
+                            <label>Infants</label>
+                            {{ form.infant_count }}
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <div class="mb-3">
-                {{ form.preferred_airlines.label }}
-                {{ form.preferred_airlines }}
+            <!-- Flight Details -->
+            {% if journey_type == '1' or journey_type == '2' %}
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">Flight Details</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label>From</label>
+                                {{ form.origin }}
+                            </div>
+                            <div class="col-md-6">
+                                <label>To</label>
+                                {{ form.destination }}
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label>Departure Date</label>
+                                {{ form.departure_date }}
+                            </div>
+                            <div class="col-md-4">
+                                <label>Departure Time</label>
+                                {{ form.departure_time }}
+                            </div>
+                            <div class="col-md-4">
+                                <label>Cabin Class</label>
+                                {{ form.flight_cabin_class }}
+                            </div>
+                        </div>
+                        {% if journey_type == '2' %}
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <label>Return Date</label>
+                                    {{ form.return_date }}
+                                </div>
+                                <div class="col-md-6">
+                                    <label>Return Time</label>
+                                    {{ form.return_time }}
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            {% else %}
+                <!-- Multi-city segments -->
+                {% for segment_form in form.segment_forms %}
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">Flight {{ forloop.counter }}</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label>From</label>
+                                    {{ segment_form.origin }}
+                                </div>
+                                <div class="col-md-6">
+                                    <label>To</label>
+                                    {{ segment_form.destination }}
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <label>Date</label>
+                                    {{ segment_form.departure_date }}
+                                </div>
+                                <div class="col-md-4">
+                                    <label>Time</label>
+                                    {{ segment_form.departure_time }}
+                                </div>
+                                <div class="col-md-4">
+                                    <label>Cabin Class</label>
+                                    {{ segment_form.flight_cabin_class }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+                {% if journey_type == '3' %}
+                    <input type="hidden" name="segment_count" value="{{ form.segment_forms|length }}">
+                    <button type="button" class="btn btn-outline-primary mb-4" id="addSegment">
+                        Add Another Flight
+                    </button>
+                {% endif %}
+            {% endif %}
+
+            <!-- Additional Options -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Additional Options</h5>
+                </div>
+                <div class="card-body">
+                    <div class="form-check">
+                        {{ form.direct_flight }}
+                        <label class="form-check-label">Direct Flights Only</label>
+                    </div>
+                    <div class="form-check">
+                        {{ form.one_stop_flight }}
+                        <label class="form-check-label">One Stop Flights Only</label>
+                    </div>
+                </div>
             </div>
 
             <button type="submit" class="btn btn-primary">Search Flights</button>
         </form>
-
-        <div id="results" class="mt-5"></div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const journeyTypeSelect = document.getElementById('id_journey_type');
-            const flightSegmentsContainer = document.getElementById('flightSegmentsContainer');
-            const addFlightSegmentBtn = document.getElementById('addFlightSegment');
-            let flightSegmentCount = 0;
-
-            function initDatepicker(element) {
-                flatpickr(element, {
-                    dateFormat: "Y-m-d"
-                });
-            }
-
-            function createFlightSegment(index, isReturn = false) {
-                const segment = document.createElement('div');
-                segment.className = 'flight-segment mb-3';
-                segment.innerHTML = `
-                    <h4>${isReturn ? 'Return Flight' : (index === 1 ? 'Departure Flight' : 'Flight ' + index)}</h4>
-                    <div class="row">
-                        <div class="col">
-                            <label for="origin${index}" class="form-label">From</label>
-                            <input type="text" class="form-control" id="origin${index}" name="origin${index}" required ${isReturn ? 'disabled' : ''}>
+        $(document).ready(function() {
+            let segmentCount = {{ form.segment_forms|length|default:2 }};
+            
+            $('#addSegment').click(function() {
+                const newSegmentHtml = `
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">Flight ${segmentCount + 1}</h5>
                         </div>
-                        <div class="col">
-                            <label for="destination${index}" class="form-label">To</label>
-                            <input type="text" class="form-control" id="destination${index}" name="destination${index}" required ${isReturn ? 'disabled' : ''}>
+                        <div class="card-body">
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label>From</label>
+                                    <input type="text" name="segment_${segmentCount}-origin" class="form-control" maxlength="3" placeholder="From (e.g. BOM)" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label>To</label>
+                                    <input type="text" name="segment_${segmentCount}-destination" class="form-control" maxlength="3" placeholder="To (e.g. DEL)" required>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <label>Date</label>
+                                    <input type="date" name="segment_${segmentCount}-departure_date" class="form-control" required>
+                                </div>
+                                <div class="col-md-4">
+                                    <label>Time</label>
+                                    <select name="segment_${segmentCount}-departure_time" class="form-control" required>
+                                        {% for value, label in form.segment_forms.0.departure_time.field.choices %}
+                                            <option value="{{ value }}">{{ label }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label>Cabin Class</label>
+                                    <select name="segment_${segmentCount}-flight_cabin_class" class="form-control" required>
+                                        {% for value, label in form.segment_forms.0.flight_cabin_class.field.choices %}
+                                            <option value="{{ value }}">{{ label }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                    <div class="row mt-2">
-                        <div class="col">
-                            <label for="flightCabinClass${index}" class="form-label">Cabin Class</label>
-                            <select class="form-select" id="flightCabinClass${index}" name="flightCabinClass${index}" required>
-                                <option value="1">All</option>
-                                <option value="2">Economy</option>
-                                <option value="3">Premium Economy</option>
-                                <option value="4">Business</option>
-                                <option value="5">Premium Business</option>
-                                <option value="6">First</option>
-                            </select>
-                        </div>
-                        <div class="col">
-                            <label for="departureDate${index}" class="form-label">Departure Date</label>
-                            <input type="text" class="form-control datepicker" id="departureDate${index}" name="departureDate${index}" required>
-                        </div>
-                        <div class="col">
-                            <label for="departureTime${index}" class="form-label">Departure Time</label>
-                            <select class="form-select" id="departureTime${index}" name="departureTime${index}" required>
-                                <option value="00:00:00">Any Time</option>
-                                <option value="08:00:00">Morning Flight</option>
-                                <option value="14:00:00">Afternoon Flight</option>
-                                <option value="19:00:00">Evening Flight</option>
-                                <option value="01:00:00">Night Flight</option>
-                            </select>
-                        </div>
-                    </div>
-                `;
-                flightSegmentsContainer.appendChild(segment);
-                initDatepicker(document.getElementById(`departureDate${index}`));
-            }
+                    </div>`;
 
-            function updateFlightSegments() {
-                const journeyType = parseInt(journeyTypeSelect.value);
-                flightSegmentsContainer.innerHTML = '';
-                flightSegmentCount = 0;
-
-                if (journeyType === 1) {  // One Way
-                    createFlightSegment(++flightSegmentCount);
-                    addFlightSegmentBtn.style.display = 'none';
-                } else if (journeyType === 2) {  // Round Trip
-                    createFlightSegment(++flightSegmentCount);
-                    createFlightSegment(++flightSegmentCount, true);
-                    addFlightSegmentBtn.style.display = 'none';
-                    lockRoundTripFields();
-                } else if (journeyType === 3) {  // Multi-City
-                    createFlightSegment(++flightSegmentCount);
-                    createFlightSegment(++flightSegmentCount);
-                    addFlightSegmentBtn.style.display = 'block';
-                }
-            }
-
-            function lockRoundTripFields() {
-                const origin1 = document.getElementById('origin1');
-                const destination1 = document.getElementById('destination1');
-                const origin2 = document.getElementById('origin2');
-                const destination2 = document.getElementById('destination2');
-
-                origin1.addEventListener('input', function() {
-                    destination2.value = origin1.value;
-                });
-                destination1.addEventListener('input', function() {
-                    origin2.value = destination1.value;
-                });
-            }
-
-            addFlightSegmentBtn.addEventListener('click', function() {
-                createFlightSegment(++flightSegmentCount);
+                $(newSegmentHtml).insertBefore(this);
+                segmentCount++;
+                $('input[name="segment_count"]').val(segmentCount);
             });
-
-            document.getElementById('flightApiForm').addEventListener('submit', function(e) {
-                e.preventDefault();
-                const formData = new FormData(this);
-                
-                const searchData = {
-                    AdultCount: parseInt(formData.get('adult_count')),
-                    ChildCount: parseInt(formData.get('child_count')),
-                    InfantCount: parseInt(formData.get('infant_count')),
-                    JourneyType: parseInt(formData.get('journey_type')),
-                    Segments: [],
-                    DirectFlight: formData.get('direct_flight') === 'on',
-                    OneStopFlight: formData.get('one_stop_flight') === 'on',
-                    PreferredAirlines: formData.get('preferred_airlines') ? 
-                        formData.get('preferred_airlines').split(',').map(airline => airline.trim()).filter(Boolean) : null
-                };
-
-                for (let i = 1; i <= flightSegmentCount; i++) {
-                    const origin = formData.get(`origin${i}`);
-                    const destination = formData.get(`destination${i}`);
-                    const date = formData.get(`departureDate${i}`);
-                    const time = formData.get(`departureTime${i}`);
-                    const combinedDateTime = `${date}T${time}`;
-
-                    // Only push valid segments
-                    if (origin && destination) {
-                        searchData.Segments.push({
-                            Origin: origin,
-                            Destination: destination,
-                            FlightCabinClass: parseInt(formData.get(`flightCabinClass${i}`)),
-                            PreferredDepartureTime: combinedDateTime,
-                            PreferredArrivalTime: combinedDateTime
-                        });
-                    }
-                }
-
-                // If Round Trip, add return flight details
-                if (searchData.JourneyType === 2) {
-                    const returnOrigin = document.getElementById('destination1').value;
-                    const returnDestination = document.getElementById('origin1').value;
-                    const returnDate = formData.get('departureDate2');
-                    const returnTime = formData.get('departureTime2');
-                    const returnCombinedDateTime = `${returnDate}T${returnTime}`;
-
-                    // Only push valid return flight segment
-                    if (returnOrigin && returnDestination) {
-                        searchData.Segments.push({
-                            Origin: returnOrigin,
-                            Destination: returnDestination,
-                            FlightCabinClass: parseInt(formData.get('flightCabinClass2')),
-                            PreferredDepartureTime: returnCombinedDateTime,
-                            PreferredArrivalTime: returnCombinedDateTime
-                        });
-                    }
-                }
-
-                // Log or process the search data as needed
-                console.log('Search Data:', searchData);
-                document.getElementById('results').innerHTML = `<pre>${JSON.stringify(searchData, null, 2)}</pre>`;
-            });
-
-
-            journeyTypeSelect.addEventListener('change', updateFlightSegments);
-    
-            // Initialize the form
-            updateFlightSegments();
         });
-    </script>    
+    </script>
 </body>
 </html>
