@@ -4,112 +4,340 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <title>Flight Search Results</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
-        .card {
-            border: 1px solid #007bff;
-            border-radius: 0.5rem;
+        .flight-card {
+            border: 1px solid #e9ecef;
+            border-radius: 16px;
+            transition: all 0.3s ease;
+            margin-bottom: 2rem;
+            overflow: hidden;
         }
-        .card-title {
-            color: #007bff;
+        .flight-card:hover {
+            box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.15);
+        }
+        .card-header {
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+            padding: 1rem 1.5rem;
+        }
+        .airline-logo {
+            width: 48px;
+            height: 48px;
+            background: #e9ecef;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .timeline-container {
+            position: relative;
+            padding: 2rem;
+            margin: 1rem 0;
+            background: #fff;
+            border-radius: 12px;
+        }
+        .timeline-dot {
+            width: 12px;
+            height: 12px;
+            background: #0d6efd;
+            border-radius: 50%;
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        .timeline-line {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 2px;
+            background: #dee2e6;
+            height: 100%;
+            top: 0;
+        }
+        .city-info {
+            font-size: 1.25rem;
+            font-weight: 500;
+        }
+        .airport-info {
+            font-size: 0.875rem;
+            color: #6c757d;
+        }
+        .terminal-info {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            background: #e9ecef;
+            border-radius: 4px;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+        }
+        .duration-badge {
+            background: #e7f1ff;
+            color: #0d6efd;
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+            font-weight: 500;
+        }
+        .price-section {
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin-top: 1rem;
+        }
+        .baggage-info {
+            background: #fff;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+        }
+        .nav-pills .nav-link {
+            border-radius: 50px;
+            padding: 0.75rem 1.5rem;
+            font-weight: 500;
+        }
+        .nav-pills .nav-link.active {
+            background-color: #0d6efd;
+            box-shadow: 0 2px 4px rgba(13, 110, 253, 0.2);
+        }
+        .connection-info {
+            background: #fff3cd;
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+            border: 1px dashed #ffc107;
         }
     </style>
 </head>
-<body>
-    <div class="container mt-5">
-        <h1 class="mb-4">Flight Search Results</h1>
+<body class="bg-light">
+    <div class="container py-4">
+        {% if outbound_cards or return_cards %}
+            {% if return_cards %}
+                <ul class="nav nav-pills mb-4 justify-content-center" id="flightTabs" role="tablist">
+                    <li class="nav-item mx-2" role="presentation">
+                        <button class="nav-link active" id="outbound-tab" data-bs-toggle="pill" data-bs-target="#outbound" type="button" role="tab">
+                            <i class="fas fa-plane-departure me-2"></i>Outbound Flights ({{ outbound_cards|length }})
+                        </button>
+                    </li>
+                    <li class="nav-item mx-2" role="presentation">
+                        <button class="nav-link" id="return-tab" data-bs-toggle="pill" data-bs-target="#return" type="button" role="tab">
+                            <i class="fas fa-plane-arrival me-2"></i>Return Flights ({{ return_cards|length }})
+                        </button>
+                    </li>
+                </ul>
+            {% endif %}
 
-        {% if error %}
-            <div class="alert alert-danger" role="alert">
-                {{ error }}
-            </div>
-        {% endif %}
+            <div class="tab-content" id="flightTabsContent">
+                <!-- Outbound Flights -->
+                <div class="tab-pane fade show active" id="outbound" role="tabpanel">
+                    {% if outbound_cards %}
+                        {% for card in outbound_cards %}
+                            <div class="flight-card">
+                                <div class="card-header">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div class="d-flex align-items-center">
+                                            <div class="airline-logo me-3">
+                                                <i class="fas fa-plane text-primary fa-lg"></i>
+                                            </div>
+                                            <div>
+                                                <div class="text-muted">Operated by</div>
+                                                <h5 class="mb-0">{{ card.Source }}</h5>
+                                            </div>
+                                        </div>
+                                        <div class="text-end">
+                                            <div class="h3 mb-0 text-primary">{{ card.currency }} {{ card.fare }}</div>
+                                            <small class="text-muted">Published Fare: {{ card.currency }} {{ card.publishedFare }}</small>
+                                        </div>
+                                    </div>
+                                </div>
 
-        {% if outbound_cards %}
-            <h2>Outbound Flights ({{ outbound_cards|length }})</h2>
-            <div class="row">
-                {% for card in outbound_cards %}
-                    <div class="col-md-4 mb-4">
-                        <div class="card">
-                            <div class="card-body">
-                                <h5 class="card-title">Fare: {{ card.fare }} {{ card.currency }}</h5>
-                                <h6 class="card-subtitle mb-2 text-muted">Published Fare: {{ card.publishedFare }}</h6>
-                                <p class="card-text"><strong>Source:</strong> {{ card.Source }}</p>
-                                
-                                <h6>Segments:</h6>
-                                <ul class="list-group">
+                                <div class="card-body">
                                     {% for segment in card.Segments %}
                                         {% for key, value in segment.items %}
-                                            <li class="list-group-item">
-                                                <strong>Segment {{ loop.index }}:</strong>
-                                                <ul>
-                                                    <li><strong>Airline:</strong> {{ value.AirlineName }} ({{ value.AirlineCode }})</li>
-                                                    <li><strong>Flight Number:</strong> {{ value.FlightNumber }}</li>
-                                                    <li><strong>Departure:</strong> {{ value.DepartureTime }} ({{ value.OriginAirportName }})</li>
-                                                    <li><strong>Arrival:</strong> {{ value.ArrivalTime }} ({{ value.DestinationAirportName }})</li>
-                                                    <li><strong>Duration:</strong> {{ value.Duration }}</li>
-                                                    <li><strong>Baggage:</strong> {{ value.Baggage }} | <strong>Cabin Baggage:</strong> {{ value.CabinBaggage }}</li>
-                                                    <li><strong>Cabin Class:</strong> {{ value.CabinClass }}</li>
-                                                </ul>
-                                            </li>
+                                            <div class="timeline-container">
+                                                <!-- Flight Header -->
+                                                <div class="mb-4">
+                                                    <span class="badge bg-primary me-2">Flight {{ value.FlightNumber }}</span>
+                                                    <span class="badge bg-secondary">{{ value.AirlineName }} ({{ value.AirlineCode }})</span>
+                                                </div>
+
+                                                <!-- Flight Route -->
+                                                <div class="row align-items-center">
+                                                    <!-- Departure -->
+                                                    <div class="col-md-5 text-center">
+                                                        <div class="city-info">{{ value.OriginCityName }}</div>
+                                                        <div class="airport-info">{{ value.OriginAirportName }} ({{ value.OriginAirportCode }})</div>
+                                                        {% if value.OriginTerminal %}
+                                                            <div class="terminal-info">Terminal {{ value.OriginTerminal }}</div>
+                                                        {% endif %}
+                                                        <div class="mt-2 h4">{{ value.DepartureTime }}</div>
+                                                    </div>
+
+                                                    <!-- Duration -->
+                                                    <div class="col-md-2 text-center">
+                                                        <div class="duration-badge">
+                                                            <i class="fas fa-clock me-2"></i>{{ value.Duration }}
+                                                        </div>
+                                                        <div class="flight-path mt-2">
+                                                            <i class="fas fa-plane me-2"></i>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- Arrival -->
+                                                    <div class="col-md-5 text-center">
+                                                        <div class="city-info">{{ value.DestinationCityName }}</div>
+                                                        <div class="airport-info">{{ value.DestinationAirportName }} ({{ value.DestinationAirportCode }})</div>
+                                                        {% if value.DestinationTerminal %}
+                                                            <div class="terminal-info">Terminal {{ value.DestinationTerminal }}</div>
+                                                        {% endif %}
+                                                        <div class="mt-2 h4">{{ value.ArrivalTime }}</div>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Flight Details -->
+                                                <div class="baggage-info mt-4">
+                                                    <div class="row">
+                                                        <div class="col-md-4">
+                                                            <div class="mb-2"><i class="fas fa-couch me-2"></i>Cabin Class</div>
+                                                            <strong>{{ value.CabinClass }}</strong>
+                                                        </div>
+                                                        <div class="col-md-4">
+                                                            <div class="mb-2"><i class="fas fa-suitcase me-2"></i>Checked Baggage</div>
+                                                            <strong>{{ value.Baggage }}</strong>
+                                                        </div>
+                                                        <div class="col-md-4">
+                                                            <div class="mb-2"><i class="fas fa-briefcase me-2"></i>Cabin Baggage</div>
+                                                            <strong>{{ value.CabinBaggage }}</strong>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {% if not forloop.last %}
+                                                <div class="connection-info text-center">
+                                                    <i class="fas fa-exchange-alt me-2"></i>
+                                                    <strong>Connection</strong> - Change of Aircraft Required
+                                                </div>
+                                            {% endif %}
                                         {% endfor %}
                                     {% endfor %}
-                                </ul>
+                                </div>
                             </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="alert alert-warning" role="alert">
+                            <i class="fas fa-exclamation-triangle me-2"></i>No outbound flights found.
                         </div>
+                    {% endif %}
+                </div>
+
+                <!-- Return Flights -->
+                {% if return_cards %}
+                    <div class="tab-pane fade" id="return" role="tabpanel">
+                        <!-- Same structure as outbound flights -->
+                        {% for card in return_cards %}
+                            <div class="flight-card">
+                                <div class="card-header">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div class="d-flex align-items-center">
+                                            <div class="airline-logo me-3">
+                                                <i class="fas fa-plane text-primary fa-lg"></i>
+                                            </div>
+                                            <div>
+                                                <div class="text-muted">Operated by</div>
+                                                <h5 class="mb-0">{{ card.Source }}</h5>
+                                            </div>
+                                        </div>
+                                        <div class="text-end">
+                                            <div class="h3 mb-0 text-primary">{{ card.currency }} {{ card.fare }}</div>
+                                            <small class="text-muted">Published Fare: {{ card.currency }} {{ card.publishedFare }}</small>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="card-body">
+                                    {% for segment in card.Segments %}
+                                        {% for key, value in segment.items %}
+                                            <div class="timeline-container">
+                                                <!-- Flight Header -->
+                                                <div class="mb-4">
+                                                    <span class="badge bg-primary me-2">Flight {{ value.FlightNumber }}</span>
+                                                    <span class="badge bg-secondary">{{ value.AirlineName }} ({{ value.AirlineCode }})</span>
+                                                </div>
+
+                                                <!-- Flight Route -->
+                                                <div class="row align-items-center">
+                                                    <!-- Departure -->
+                                                    <div class="col-md-5 text-center">
+                                                        <div class="city-info">{{ value.OriginCityName }}</div>
+                                                        <div class="airport-info">{{ value.OriginAirportName }} ({{ value.OriginAirportCode }})</div>
+                                                        {% if value.OriginTerminal %}
+                                                            <div class="terminal-info">Terminal {{ value.OriginTerminal }}</div>
+                                                        {% endif %}
+                                                        <div class="mt-2 h4">{{ value.DepartureTime }}</div>
+                                                    </div>
+
+                                                    <!-- Duration -->
+                                                    <div class="col-md-2 text-center">
+                                                        <div class="duration-badge">
+                                                            <i class="fas fa-clock me-2"></i>{{ value.Duration }}
+                                                        </div>
+                                                        <div class="flight-path mt-2">
+                                                            <i class="fas fa-plane me-2"></i>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- Arrival -->
+                                                    <div class="col-md-5 text-center">
+                                                        <div class="city-info">{{ value.DestinationCityName }}</div>
+                                                        <div class="airport-info">{{ value.DestinationAirportName }} ({{ value.DestinationAirportCode }})</div>
+                                                        {% if value.DestinationTerminal %}
+                                                            <div class="terminal-info">Terminal {{ value.DestinationTerminal }}</div>
+                                                        {% endif %}
+                                                        <div class="mt-2 h4">{{ value.ArrivalTime }}</div>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Flight Details -->
+                                                <div class="baggage-info mt-4">
+                                                    <div class="row">
+                                                        <div class="col-md-4">
+                                                            <div class="mb-2"><i class="fas fa-couch me-2"></i>Cabin Class</div>
+                                                            <strong>{{ value.CabinClass }}</strong>
+                                                        </div>
+                                                        <div class="col-md-4">
+                                                            <div class="mb-2"><i class="fas fa-suitcase me-2"></i>Checked Baggage</div>
+                                                            <strong>{{ value.Baggage }}</strong>
+                                                        </div>
+                                                        <div class="col-md-4">
+                                                            <div class="mb-2"><i class="fas fa-briefcase me-2"></i>Cabin Baggage</div>
+                                                            <strong>{{ value.CabinBaggage }}</strong>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {% if not forloop.last %}
+                                                <div class="connection-info text-center">
+                                                    <i class="fas fa-exchange-alt me-2"></i>
+                                                    <strong>Connection</strong> - Change of Aircraft Required
+                                                </div>
+                                            {% endif %}
+                                        {% endfor %}
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        {% endfor %}
                     </div>
-                {% endfor %}
+                {% endif %}
             </div>
         {% else %}
             <div class="alert alert-warning" role="alert">
-                No outbound flights found.
-            </div>
-        {% endif %}
-
-        {% if return_cards %}
-            <h2>Return Flights ({{ return_cards|length }})</h2>
-            <div class="row">
-                {% for card in return_cards %}
-                    <div class="col-md-4 mb-4">
-                        <div class="card">
-                            <div class="card-body">
-                                <h5 class="card-title">Fare: {{ card.fare }} {{ card.currency }}</h5>
-                                <h6 class="card-subtitle mb-2 text-muted">Published Fare: {{ card.publishedFare }}</h6>
-                                <p class="card-text"><strong>Source:</strong> {{ card.Source }}</p>
-                                
-                                <h6>Segments:</h6>
-                                <ul class="list-group">
-                                    {% for segment in card.Segments %}
-                                        {% for key, value in segment.items %}
-                                            <li class="list-group-item">
-                                                <strong>Segment {{ loop.index }}:</strong>
-                                                <ul>
-                                                    <li><strong>Airline:</strong> {{ value.AirlineName }} ({{ value.AirlineCode }})</li>
-                                                    <li><strong>Flight Number:</strong> {{ value.FlightNumber }}</li>
-                                                    <li><strong>Departure:</strong> {{ value.DepartureTime }} ({{ value.OriginAirportName }})</li>
-                                                    <li><strong>Arrival:</strong> {{ value.ArrivalTime }} ({{ value.DestinationAirportName }})</li>
-                                                    <li><strong>Duration:</strong> {{ value.Duration }}</li>
-                                                    <li><strong>Baggage:</strong> {{ value.Baggage }} | <strong>Cabin Baggage:</strong> {{ value.CabinBaggage }}</li>
-                                                    <li><strong>Cabin Class:</strong> {{ value.CabinClass }}</li>
-                                                </ul>
-                                            </li>
-                                        {% endfor %}
-                                    {% endfor %}
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                {% endfor %}
-            </div>
-        {% else %}
-            <div class="alert alert-warning" role="alert">
-                No return flights found.
+                <i class="fas fa-exclamation-triangle me-2"></i>No flights found.
             </div>
         {% endif %}
     </div>
 
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
