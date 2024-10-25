@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Hotel Search</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="text-center">Search for Hotels</h1>
+        <form action="{% url 'city_search' %}" method="post" class="mt-4">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="country">Select Country:</label>
+                <select name="country_code" id="country" class="form-control">
+                    {% for country in countries %}
+                    <option value="{{ country.Code }}">{{ country.Name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary btn-block">Search Cities</button>
+        </form>
+    </div>
+</body>
+</html>
