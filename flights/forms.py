@@ -135,16 +135,26 @@ class MultiCityFlightForm(BaseFlightForm):
                 data=data if data else None
             )
             self.segment_forms.append(form)
+        print(f"Segment forms are: {self.segment_forms}")
 
     def is_valid(self):
+        print("Calling is_valid on MultiCityFlightForm")
         if not super().is_valid():
+            print("BaseFlightForm is not valid")
             return False
-        return all(form.is_valid() for form in self.segment_forms)
+        print("BaseFlightForm is valid")
+        segment_validity = all(form.is_valid() for form in self.segment_forms)
+        print(f"Segment forms are valid: {segment_validity}")
+        return segment_validity
 
     def clean(self):
+        print("Calling clean on MultiCityFlightForm")
         cleaned_data = super().clean()
+        print(f"Cleaned data from base form: {cleaned_data}")
         cleaned_data['segments'] = [
-            form.cleaned_data for form in self.segment_forms 
+            form.cleaned_data 
+            for form in self.segment_forms 
             if form.is_valid()
         ]
+        print(f"Cleaned data for all forms: {cleaned_data}")
         return cleaned_data 
