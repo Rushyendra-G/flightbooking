@@ -1,5 +1,6 @@
 # forms.py
 from django import forms
+from django.forms import formset_factory, BaseFormSet
 from datetime import datetime
 
 TIME_CHOICES = [
@@ -19,41 +20,66 @@ CABIN_CLASSES = [
     (6, 'First'),
 ]
 
-class BaseFlightForm(forms.Form):
-    """Base form with common fields for all journey types"""
+class PassengerForm(forms.Form):
+    """Form for passenger counts"""
     adult_count = forms.IntegerField(
-        min_value=1, initial=1,
-        widget=forms.NumberInput(attrs={'class': 'form-control'})
+        min_value=1, max_value=9, initial=1,
+        widget=forms.NumberInput(attrs={
+            'class': 'form-control',
+            'id': 'adult_count'
+        })
     )
     child_count = forms.IntegerField(
-        min_value=0, initial=0,
-        widget=forms.NumberInput(attrs={'class': 'form-control'})
+        min_value=0, max_value=8, initial=0,
+        widget=forms.NumberInput(attrs={
+            'class': 'form-control',
+            'id': 'child_count'
+        })
     )
     infant_count = forms.IntegerField(
-        min_value=0, initial=0,
-        widget=forms.NumberInput(attrs={'class': 'form-control'})
-    )
-    direct_flight = forms.BooleanField(
-        required=False,
-        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})
-    )
-    one_stop_flight = forms.BooleanField(
-        required=False,
-        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})
+        min_value=0, max_value=4, initial=0,
+        widget=forms.NumberInput(attrs={
+            'class': 'form-control',
+            'id': 'infant_count'
+        })
     )
 
-class OneWayFlightForm(BaseFlightForm):
+    def clean(self):
+        cleaned_data = super().clean()
+        adult_count = cleaned_data.get('adult_count', 0)
+        child_count = cleaned_data.get('child_count', 0)
+        infant_count = cleaned_data.get('infant_count', 0)
+
+        if adult_count + child_count + infant_count > 9:
+            raise forms.ValidationError("Total passengers cannot exceed 9")
+        
+        if infant_count > adult_count:
+            raise forms.ValidationError("Number of infants cannot exceed number of adults")
+
+        return cleaned_data
+
+class OneWayFlightForm(forms.Form):
     """Form for one-way flights"""
     origin = forms.CharField(
-        max_length=3,
-        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'From (e.g. BOM)'})
+        max_length=3, min_length=3,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control airport-input',
+            'placeholder': 'From (e.g. BOM)'
+        })
     )
     destination = forms.CharField(
-        max_length=3,
-        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'To (e.g. DEL)'})
+        max_length=3, min_length=3,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control airport-input',
+            'placeholder': 'To (e.g. DEL)'
+        })
     )
     departure_date = forms.DateField(
-        widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'})
+        widget=forms.DateInput(attrs={
+            'class': 'form-control',
+            'type': 'date',
+            'min': datetime.now().date().isoformat()
+        })
     )
     departure_time = forms.ChoiceField(
         choices=TIME_CHOICES,
@@ -64,25 +90,53 @@ class OneWayFlightForm(BaseFlightForm):
         widget=forms.Select(attrs={'class': 'form-control'})
     )
 
-class RoundTripFlightForm(BaseFlightForm):
-    """Form for round-trip flights"""
+    def clean(self):
+        cleaned_data = super().clean()
+        origin = cleaned_data.get('origin')
+        destination = cleaned_data.get('destination')
+        departure_date = cleaned_data.get('departure_date')
+
+        if origin and destination and origin.upper() == destination.upper():
+            raise forms.ValidationError("Origin and destination cannot be the same")
+
+        if departure_date and departure_date < datetime.now().date():
+            raise forms.ValidationError("Departure date cannot be in the past")
+
+        return cleaned_data
+
+class RoundTripFlightForm(forms.Form):
+    """Simplified form for round-trip flights - only dates and times"""
     origin = forms.CharField(
-        max_length=3,
-        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'From (e.g. BOM)'})
+        max_length=3, min_length=3,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control airport-input',
+            'placeholder': 'From (e.g. BOM)'
+        })
     )
     destination = forms.CharField(
-        max_length=3,
-        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'To (e.g. DEL)'})
+        max_length=3, min_length=3,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control airport-input',
+            'placeholder': 'To (e.g. DEL)'
+        })
     )
     departure_date = forms.DateField(
-        widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'})
+        widget=forms.DateInput(attrs={
+            'class': 'form-control',
+            'type': 'date',
+            'min': datetime.now().date().isoformat()
+        })
     )
     departure_time = forms.ChoiceField(
         choices=TIME_CHOICES,
         widget=forms.Select(attrs={'class': 'form-control'})
     )
     return_date = forms.DateField(
-        widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'})
+        widget=forms.DateInput(attrs={
+            'class': 'form-control',
+            'type': 'date',
+            'min': datetime.now().date().isoformat()
+        })
     )
     return_time = forms.ChoiceField(
         choices=TIME_CHOICES,
@@ -93,18 +147,46 @@ class RoundTripFlightForm(BaseFlightForm):
         widget=forms.Select(attrs={'class': 'form-control'})
     )
 
+    def clean(self):
+        cleaned_data = super().clean()
+        departure_date = cleaned_data.get('departure_date')
+        return_date = cleaned_data.get('return_date')
+        origin = cleaned_data.get('origin')
+        destination = cleaned_data.get('destination')
+
+        if origin and destination and origin.upper() == destination.upper():
+            raise forms.ValidationError("Origin and destination cannot be the same")
+
+        if departure_date and departure_date < datetime.now().date():
+            raise forms.ValidationError("Departure date cannot be in the past")
+
+        if departure_date and return_date and return_date < departure_date:
+            raise forms.ValidationError("Return date must be after departure date")
+
+        return cleaned_data
+
 class MultiCitySegmentForm(forms.Form):
-    """Form for a single segment in multi-city journey"""
+    """Form for multi-city flight segments"""
     origin = forms.CharField(
-        max_length=3,
-        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'From (e.g. BOM)'})
+        max_length=3, min_length=3,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control airport-input',
+            'placeholder': 'From (e.g. BOM)'
+        })
     )
     destination = forms.CharField(
-        max_length=3,
-        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'To (e.g. DEL)'})
+        max_length=3, min_length=3,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control airport-input',
+            'placeholder': 'To (e.g. DEL)'
+        })
     )
     departure_date = forms.DateField(
-        widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'})
+        widget=forms.DateInput(attrs={
+            'class': 'form-control',
+            'type': 'date',
+            'min': datetime.now().date().isoformat()
+        })
     )
     departure_time = forms.ChoiceField(
         choices=TIME_CHOICES,
@@ -115,46 +197,67 @@ class MultiCitySegmentForm(forms.Form):
         widget=forms.Select(attrs={'class': 'form-control'})
     )
 
-class MultiCityFlightForm(BaseFlightForm):
-    """Form for multi-city flights"""
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.segment_forms = []
-        
-        # Get data from POST if available
-        data = kwargs.get('data', None)
-        if data:
-            segment_count = int(data.get('segment_count', 2))
-        else:
-            segment_count = 2  # Default number of segments
-            
-        for i in range(segment_count):
-            prefix = f'segment_{i}'
-            form = MultiCitySegmentForm(
-                prefix=prefix,
-                data=data if data else None
-            )
-            self.segment_forms.append(form)
-        print(f"Segment forms are: {self.segment_forms}")
+class BaseMultiCityFormSet(BaseFormSet):
+    """Base formset for multi-city segments with validation"""
+    def clean(self):
+        if any(self.errors):
+            return
 
-    def is_valid(self):
-        print("Calling is_valid on MultiCityFlightForm")
-        if not super().is_valid():
-            print("BaseFlightForm is not valid")
-            return False
-        print("BaseFlightForm is valid")
-        segment_validity = all(form.is_valid() for form in self.segment_forms)
-        print(f"Segment forms are valid: {segment_validity}")
-        return segment_validity
+        dates = []
+        for form in self.forms:
+            if form.cleaned_data:
+                date = form.cleaned_data.get('departure_date')
+                if date:
+                    if dates and date < dates[-1]:
+                        raise forms.ValidationError(
+                            "Flight dates must be in sequence"
+                        )
+                    dates.append(date)
+
+                # Validate that segments connect
+                if len(self.forms) > 1:
+                    prev_dest = self.forms[self.forms.index(form) - 1].cleaned_data.get('destination') if self.forms.index(form) > 0 else None
+                    curr_origin = form.cleaned_data.get('origin')
+                    
+                    if prev_dest and curr_origin and prev_dest.upper() != curr_origin.upper():
+                        raise forms.ValidationError(
+                            f"Flight segments must connect. Segment {self.forms.index(form) + 1} should depart from {prev_dest.upper()}"
+                        )
+
+class FlightSearchOptionsForm(forms.Form):
+    """Form for additional flight search options"""
+    direct_flight = forms.BooleanField(
+        required=False,
+        widget=forms.CheckboxInput(attrs={
+            'class': 'form-check-input',
+            'id': 'direct_flight'
+        })
+    )
+    one_stop_flight = forms.BooleanField(
+        required=False,
+        widget=forms.CheckboxInput(attrs={
+            'class': 'form-check-input',
+            'id': 'one_stop_flight'
+        })
+    )
 
     def clean(self):
-        print("Calling clean on MultiCityFlightForm")
         cleaned_data = super().clean()
-        print(f"Cleaned data from base form: {cleaned_data}")
-        cleaned_data['segments'] = [
-            form.cleaned_data 
-            for form in self.segment_forms 
-            if form.is_valid()
-        ]
-        print(f"Cleaned data for all forms: {cleaned_data}")
-        return cleaned_data 
+        direct_flight = cleaned_data.get('direct_flight')
+        one_stop_flight = cleaned_data.get('one_stop_flight')
+
+        if direct_flight and one_stop_flight:
+            raise forms.ValidationError("Cannot select both direct and one-stop flights")
+
+        return cleaned_data
+
+# Create the formset for multi-city segments
+MultiCityFormSet = formset_factory(
+    MultiCitySegmentForm,
+    formset=BaseMultiCityFormSet,
+    min_num=2,
+    max_num=6,
+    validate_min=True,
+    validate_max=True,
+    extra=0
+)

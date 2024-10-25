@@ -1,213 +1,425 @@
-{% load static %}
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Flight Search</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+    <style>
+        .journey-type-selector {
+            border-bottom: 2px solid #e9ecef;
+            margin-bottom: 2rem;
+        }
+        
+        .journey-type-selector .nav-link {
+            color: #495057;
+            border: none;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -2px;
+        }
+        
+        .journey-type-selector .nav-link.active {
+            color: #0d6efd;
+            border-bottom-color: #0d6efd;
+        }
+        
+        .segment-card {
+            border: 1px solid #dee2e6;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .remove-segment {
+            position: absolute;
+            right: 1rem;
+            top: 1rem;
+        }
+        
+        .passenger-counter {
+            width: 120px;
+        }
+        
+        .airport-input {
+            text-transform: uppercase;
+        }
+        
+        .error-feedback {
+            color: #dc3545;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+        }
+    </style>
 </head>
 <body>
-    <div class="container mt-5">
-        <h2 class="mb-4">Flight Search</h2>
+    <div class="container py-5">
+        <h1 class="text-center mb-4">Flight Search</h1>
         
-        <!-- Journey Type Selection -->
-        <div class="btn-group mb-4" role="group">
-            <a href="?type=1" class="btn btn-{% if journey_type == '1' %}primary{% else %}outline-primary{% endif %}">
-                One Way
-            </a>
-            <a href="?type=2" class="btn btn-{% if journey_type == '2' %}primary{% else %}outline-primary{% endif %}">
-                Round Trip
-            </a>
-            <a href="?type=3" class="btn btn-{% if journey_type == '3' %}primary{% else %}outline-primary{% endif %}">
-                Multi City
-            </a>
-        </div>
-
-        <form method="post" id="flightSearchForm">
+        <form method="POST" id="flightSearchForm">
             {% csrf_token %}
-            <input type="hidden" name="journey_type" value="{{ journey_type }}">
+            <input type="hidden" name="journey_type" id="journey_type" value="{{ journey_type }}">
+            
+            <!-- Journey Type Selector -->
+            <ul class="nav nav-pills journey-type-selector mb-4 justify-content-center" id="journeyTypeTab">
+                <li class="nav-item mb-2">
+                    <a class="nav-link {% if journey_type == '1' %}active text-white{% endif %}" data-type="1" href="?type=1">
+                        <i class="fas fa-plane"></i> One Way
+                    </a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a class="nav-link {% if journey_type == '2' %}active text-white{% endif %}" data-type="2" href="?type=2">
+                        <i class="fas fa-exchange-alt"></i> Round Trip
+                    </a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a class="nav-link {% if journey_type == '3' %}active text-white{% endif %}" data-type="3" href="?type=3">
+                        <i class="fas fa-route"></i> Multi City
+                    </a>
+                </li>
+            </ul>
+
+            <!-- Error Display -->
+            {% if error %}
+            <div class="alert alert-danger" role="alert">
+                {{ error }}
+            </div>
+            {% endif %}
             
             <!-- Passenger Information -->
             <div class="card mb-4">
                 <div class="card-header">
-                    <h5 class="mb-0">Passenger Information</h5>
+                    <h5 class="mb-0"><i class="fas fa-users"></i> Passengers</h5>
                 </div>
                 <div class="card-body">
-                    <div class="row">
+                    <div class="row g-3">
                         <div class="col-md-4">
-                            <label>Adults</label>
-                            {{ form.adult_count }}
+                            <label for="{{ passenger_form.adult_count.id_for_label }}" class="form-label">Adults (12+ years)</label>
+                            {{ passenger_form.adult_count }}
+                            {% if passenger_form.adult_count.errors %}
+                            <div class="error-feedback">{{ passenger_form.adult_count.errors }}</div>
+                            {% endif %}
                         </div>
                         <div class="col-md-4">
-                            <label>Children</label>
-                            {{ form.child_count }}
+                            <label for="{{ passenger_form.child_count.id_for_label }}" class="form-label">Children (2-11 years)</label>
+                            {{ passenger_form.child_count }}
+                            {% if passenger_form.child_count.errors %}
+                            <div class="error-feedback">{{ passenger_form.child_count.errors }}</div>
+                            {% endif %}
                         </div>
                         <div class="col-md-4">
-                            <label>Infants</label>
-                            {{ form.infant_count }}
+                            <label for="{{ passenger_form.infant_count.id_for_label }}" class="form-label">Infants (under 2)</label>
+                            {{ passenger_form.infant_count }}
+                            {% if passenger_form.infant_count.errors %}
+                            <div class="error-feedback">{{ passenger_form.infant_count.errors }}</div>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
             </div>
 
             <!-- Flight Details -->
-            {% if journey_type == '1' or journey_type == '2' %}
-                <div class="card mb-4">
-                    <div class="card-header">
-                        <h5 class="mb-0">Flight Details</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label>From</label>
-                                {{ form.origin }}
-                            </div>
-                            <div class="col-md-6">
-                                <label>To</label>
-                                {{ form.destination }}
-                            </div>
-                        </div>
-                        <div class="row mb-3">
-                            <div class="col-md-4">
-                                <label>Departure Date</label>
-                                {{ form.departure_date }}
-                            </div>
-                            <div class="col-md-4">
-                                <label>Departure Time</label>
-                                {{ form.departure_time }}
-                            </div>
-                            <div class="col-md-4">
-                                <label>Cabin Class</label>
-                                {{ form.flight_cabin_class }}
-                            </div>
-                        </div>
-                        {% if journey_type == '2' %}
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <label>Return Date</label>
-                                    {{ form.return_date }}
-                                </div>
-                                <div class="col-md-6">
-                                    <label>Return Time</label>
-                                    {{ form.return_time }}
-                                </div>
-                            </div>
-                        {% endif %}
-                    </div>
-                </div>
-            {% else %}
-                <!-- Multi-city segments -->
-                {% for segment_form in form.segment_forms %}
-                    <div class="card mb-4">
-                        <div class="card-header">
-                            <h5 class="mb-0">Flight {{ forloop.counter }}</h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="row mb-3">
-                                <div class="col-md-6">
-                                    <label>From</label>
-                                    {{ segment_form.origin }}
-                                </div>
-                                <div class="col-md-6">
-                                    <label>To</label>
-                                    {{ segment_form.destination }}
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="col-md-4">
-                                    <label>Date</label>
-                                    {{ segment_form.departure_date }}
-                                </div>
-                                <div class="col-md-4">
-                                    <label>Time</label>
-                                    {{ segment_form.departure_time }}
-                                </div>
-                                <div class="col-md-4">
-                                    <label>Cabin Class</label>
-                                    {{ segment_form.flight_cabin_class }}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                {% endfor %}
-                {% if journey_type == '3' %}
-                    <input type="hidden" name="segment_count" value="{{ form.segment_forms|length }}">
-                    <button type="button" class="btn btn-outline-primary mb-4" id="addSegment">
-                        Add Another Flight
-                    </button>
-                {% endif %}
-            {% endif %}
-
-            <!-- Additional Options -->
             <div class="card mb-4">
                 <div class="card-header">
-                    <h5 class="mb-0">Additional Options</h5>
+                    <h5 class="mb-0"><i class="fas fa-plane-departure"></i> Flight Details</h5>
                 </div>
                 <div class="card-body">
-                    <div class="form-check">
-                        {{ form.direct_flight }}
-                        <label class="form-check-label">Direct Flights Only</label>
-                    </div>
-                    <div class="form-check">
-                        {{ form.one_stop_flight }}
-                        <label class="form-check-label">One Stop Flights Only</label>
+                    {% if journey_type == '1' %}
+                        <!-- One Way Flight Form -->
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="origin" class="form-label">From</label>
+                                {{ flight_form.origin }}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="destination" class="form-label">To</label>
+                                {{ flight_form.destination }}
+                            </div>
+                            <div class="col-md-4">
+                                <label for="departure_date" class="form-label">Departure Date</label>
+                                {{ flight_form.departure_date }}
+                            </div>
+                            <div class="col-md-4">
+                                <label for="departure_time" class="form-label">Preferred Time</label>
+                                {{ flight_form.departure_time }}
+                            </div>
+                            <div class="col-md-4">
+                                <label for="flight_cabin_class" class="form-label">Cabin Class</label>
+                                {{ flight_form.flight_cabin_class }}
+                            </div>
+                        </div>
+                    {% elif journey_type == '2' %}
+                        <!-- Round Trip Flight Form -->
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="origin" class="form-label">From</label>
+                                {{ flight_form.origin }}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="destination" class="form-label">To</label>
+                                {{ flight_form.destination }}
+                            </div>
+                            <div class="col-md-3">
+                                <label for="departure_date" class="form-label">Departure Date</label>
+                                {{ flight_form.departure_date }}
+                            </div>
+                            <div class="col-md-3">
+                                <label for="departure_time" class="form-label">Departure Time</label>
+                                {{ flight_form.departure_time }}
+                            </div>
+                            <div class="col-md-3">
+                                <label for="return_date" class="form-label">Return Date</label>
+                                {{ flight_form.return_date }}
+                            </div>
+                            <div class="col-md-3">
+                                <label for="return_time" class="form-label">Return Time</label>
+                                {{ flight_form.return_time }}
+                            </div>
+                            <div class="col-md-12">
+                                <label for="flight_cabin_class" class="form-label">Cabin Class</label>
+                                {{ flight_form.flight_cabin_class }}
+                            </div>
+                        </div>
+                    {% else %}
+                        <!-- Multi City Flight Form -->
+                        {{ flight_form.management_form }}
+                        <div id="multiCitySegments">
+                            {% for form in flight_form %}
+                            <div class="segment-card position-relative mb-3">
+                                {% if forloop.counter > 2 %}
+                                <button type="button" class="btn btn-link remove-segment text-danger">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                                {% endif %}
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">From</label>
+                                        {{ form.origin }}
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">To</label>
+                                        {{ form.destination }}
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Date</label>
+                                        {{ form.departure_date }}
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Time</label>
+                                        {{ form.departure_time }}
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Cabin Class</label>
+                                        {{ form.flight_cabin_class }}
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <button type="button" id="addSegment" class="btn btn-outline-primary mt-3" {% if flight_form|length >= 6 %}disabled{% endif %}>
+                            <i class="fas fa-plus"></i> Add Another City
+                        </button>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Search Options -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-sliders-h"></i> Search Options</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                {{ options_form.direct_flight }}
+                                <label class="form-check-label" for="{{ options_form.direct_flight.id_for_label }}">
+                                    Show only direct flights
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                {{ options_form.one_stop_flight }}
+                                <label class="form-check-label" for="{{ options_form.one_stop_flight.id_for_label }}">
+                                    Show only one-stop flights
+                                </label>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <button type="submit" class="btn btn-primary">Search Flights</button>
+            <div class="text-center">
+                <button type="submit" class="btn btn-primary btn-lg px-5">
+                    <i class="fas fa-search"></i> Search Flights
+                </button>
+            </div>
         </form>
     </div>
 
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
     <script>
-        $(document).ready(function() {
-            let segmentCount = {{ form.segment_forms|length|default:2 }};
-            
-            $('#addSegment').click(function() {
-                const newSegmentHtml = `
-                    <div class="card mb-4">
-                        <div class="card-header">
-                            <h5 class="mb-0">Flight ${segmentCount + 1}</h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="row mb-3">
-                                <div class="col-md-6">
-                                    <label>From</label>
-                                    <input type="text" name="segment_${segmentCount}-origin" class="form-control" maxlength="3" placeholder="From (e.g. BOM)" required>
-                                </div>
-                                <div class="col-md-6">
-                                    <label>To</label>
-                                    <input type="text" name="segment_${segmentCount}-destination" class="form-control" maxlength="3" placeholder="To (e.g. DEL)" required>
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="col-md-4">
-                                    <label>Date</label>
-                                    <input type="date" name="segment_${segmentCount}-departure_date" class="form-control" required>
-                                </div>
-                                <div class="col-md-4">
-                                    <label>Time</label>
-                                    <select name="segment_${segmentCount}-departure_time" class="form-control" required>
-                                        {% for value, label in form.segment_forms.0.departure_time.field.choices %}
-                                            <option value="{{ value }}">{{ label }}</option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
-                                <div class="col-md-4">
-                                    <label>Cabin Class</label>
-                                    <select name="segment_${segmentCount}-flight_cabin_class" class="form-control" required>
-                                        {% for value, label in form.segment_forms.0.flight_cabin_class.field.choices %}
-                                            <option value="{{ value }}">{{ label }}</option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-                    </div>`;
+        document.addEventListener('DOMContentLoaded', function() {
+            // Multi-city segment management
+            const addSegmentBtn = document.getElementById('addSegment');
+            if (addSegmentBtn) {
+                addSegmentBtn.addEventListener('click', function() {
+                    const segments = document.querySelectorAll('.segment-card');
+                    if (segments.length < 6) {
+                        const lastSegment = segments[segments.length - 1];
+                        const newSegment = lastSegment.cloneNode(true);
+                        
+                        // Update form indices
+                        const newIndex = segments.length;
+                        newSegment.innerHTML = newSegment.innerHTML.replace(/form-\d+/g, `form-${newIndex}`);
+                        newSegment.innerHTML = newSegment.innerHTML.replace(/id_form-\d+/g, `id_form-${newIndex}`);
+                        
+                        // Clear input values
+                        newSegment.querySelectorAll('input[type="text"], input[type="date"]').forEach(input => {
+                            input.value = '';
+                        });
+                        
+                        // Add remove button
+                        const removeBtn = document.createElement('button');
+                        removeBtn.type = 'button';
+                        removeBtn.className = 'btn btn-link remove-segment text-danger';
+                        removeBtn.innerHTML = '<i class="fas fa-times"></i>';
+                        newSegment.appendChild(removeBtn);
+                        
+                        document.getElementById('multiCitySegments').appendChild(newSegment);
+                        updateFormsetManagement();
+                    }
+                    
+                    if (segments.length + 1 >= 6) {
+                        addSegmentBtn.disabled = true;
+                    }
+                });
+            }
 
-                $(newSegmentHtml).insertBefore(this);
-                segmentCount++;
-                $('input[name="segment_count"]').val(segmentCount);
+            // Remove segment handler
+            document.addEventListener('click', function(e) {
+                if (e.target.closest('.remove-segment')) {
+                    const segment = e.target.closest('.segment-card');
+                    segment.remove();
+                    updateFormsetManagement();
+                    
+                    const addSegmentBtn = document.getElementById('addSegment');
+                    if (addSegmentBtn) {
+                        addSegmentBtn.disabled = false;
+                    }
+                }
+            });
+
+            // Update formset management form
+            function updateFormsetManagement() {
+                const totalForms = document.querySelector('[name="form-TOTAL_FORMS"]');
+                if (totalForms) {
+                    const segments = document.querySelectorAll('.segment-card');
+                    totalForms.value = segments.length;
+                }
+            }
+
+            // Validate passenger counts
+            const passengerInputs = document.querySelectorAll('input[type="number"]');
+            passengerInputs.forEach(input => {
+                input.addEventListener('change', validatePassengers);
+            });
+
+            function validatePassengers() {
+                const adultCount = parseInt(document.getElementById('adult_count').value) || 0;
+                const childCount = parseInt(document.getElementById('child_count').value) || 0;
+                const infantCount = parseInt(document.getElementById('infant_count').value) || 0;
+                
+                const total = adultCount + childCount + infantCount;
+                if (total > 9) {
+                    alert('Total passengers cannot exceed 9');
+                    this.value = this.defaultValue;
+                    return;
+                }
+                
+                if (infantCount > adultCount) {
+                    alert('Number of infants cannot exceed number of adults');
+                    document.document.getElementById('infant_count').value = adultCount;
+                }
+            }
+
+            // Date validation
+            const departureDate = document.querySelector('input[name="departure_date"]');
+            const returnDate = document.querySelector('input[name="return_date"]');
+            
+            if (departureDate && returnDate) {
+                departureDate.addEventListener('change', function() {
+                    returnDate.min = this.value;
+                    if (returnDate.value && returnDate.value < this.value) {
+                        returnDate.value = this.value;
+                    }
+                });
+            }
+
+            // Airport code validation
+            const airportInputs = document.querySelectorAll('.airport-input');
+            airportInputs.forEach(input => {
+                input.addEventListener('input', function() {
+                    this.value = this.value.toUpperCase();
+                    if (this.value.length > 3) {
+                        this.value = this.value.slice(0, 3);
+                    }
+                });
+            });
+
+            // Flight options validation
+            const directFlight = document.getElementById('direct_flight');
+            const oneStopFlight = document.getElementById('one_stop_flight');
+            
+            if (directFlight && oneStopFlight) {
+                directFlight.addEventListener('change', function() {
+                    if (this.checked) {
+                        oneStopFlight.checked = false;
+                    }
+                });
+                
+                oneStopFlight.addEventListener('change', function() {
+                    if (this.checked) {
+                        directFlight.checked = false;
+                    }
+                });
+            }
+
+            // Form submission validation
+            document.getElementById('flightSearchForm').addEventListener('submit', function(e) {
+                if (this.method.toLowerCase() === 'post') {
+                    const origin = document.querySelector('input[name$="origin"]').value;
+                    const destination = document.querySelector('input[name$="destination"]').value;
+                    
+                    if (origin.toUpperCase() === destination.toUpperCase()) {
+                        e.preventDefault();
+                        alert('Origin and destination cannot be the same');
+                        return;
+                    }
+                    
+                    // For multi-city, validate segment connections
+                    const journeyType = document.getElementById('journey_type').value;
+                    if (journeyType === '3') {
+                        const segments = document.querySelectorAll('.segment-card');
+                        for (let i = 1; i < segments.length; i++) {
+                            const prevDestination = segments[i-1].querySelector('input[name$="destination"]').value;
+                            const currOrigin = segments[i].querySelector('input[name$="origin"]').value;
+                            
+                            if (prevDestination.toUpperCase() !== currOrigin.toUpperCase()) {
+                                e.preventDefault();
+                                alert(`Flight segments must connect. Segment ${i + 1} should depart from ${prevDestination}`);
+                                return;
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Initialize tooltips
+            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
             });
         });
     </script>
