@@ -1,0 +1,97 @@
+{# templates/hotels/city_selection.html #}
+{% extends 'hotels/base.html' %}
+
+{% block title %}Hotel Search - Search Details{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h2 class="text-center mb-0">Search Details</h2>
+            </div>
+            <div class="card-body">
+                <form method="post" action="{% url 'hotels:hotel_search' %}" id="searchForm">
+                    {% csrf_token %}
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            {{ form.city.label_tag }}
+                            {{ form.city }}
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            {{ search_form.check_in.label_tag }}
+                            {{ search_form.check_in }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            {{ search_form.check_out.label_tag }}
+                            {{ search_form.check_out }}
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            {{ search_form.nationality.label_tag }}
+                            {{ search_form.nationality }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            {{ search_form.room_count.label_tag }}
+                            {{ search_form.room_count }}
+                        </div>
+                    </div>
+
+                    <div id="roomConfigurations">
+                        <div class="room-config" data-room="0">
+                            <h5>Room 1</h5>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    {{ room_form.adults.label_tag }}
+                                    {{ room_form.adults }}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    {{ room_form.children.label_tag }}
+                                    {{ room_form.children }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100">Search Hotels</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('id_room_count').addEventListener('change', function() {
+    updateRoomConfigurations(this.value);
+});
+
+function updateRoomConfigurations(roomCount) {
+    const container = document.getElementById('roomConfigurations');
+    const template = container.children[0].cloneNode(true);
+    
+    container.innerHTML = '';
+    
+    for (let i = 0; i < roomCount; i++) {
+        const room = template.cloneNode(true);
+        room.querySelector('h5').textContent = `Room ${i + 1}`;
+        room.dataset.room = i;
+        
+        const inputs = room.querySelectorAll('input');
+        inputs.forEach(input => {
+            const name = input.name;
+            input.name = `${name}_${i}`;
+            input.id = `id_${name}_${i}`;
+        });
+        
+        container.appendChild(room);
+    }
+}
+</script>
+{% endblock %}

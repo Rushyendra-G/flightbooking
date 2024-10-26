@@ -1,0 +1,94 @@
+{# templates/hotels/hotel_detail.html #}
+{% extends 'hotels/base.html' %}
+
+{% block title %}{{ hotel.HotelName }} - Details{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header bg-dark text-white">
+        <div class="row align-items-center">
+            <div class="col">
+                <h2 class="mb-0">{{ hotel.HotelName }}</h2>
+            </div>
+        </div>
+    </div>
+
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-8">
+                {% if hotel.Images %}
+                <div id="hotelCarousel" class="carousel slide mb-4" data-bs-ride="carousel">
+                    <div class="carousel-inner">
+                        {% for image in hotel.Images %}
+                        <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                            <img src="{{ image }}" class="d-block w-100" alt="Hotel Image"
+                                 style="height: 400px; object-fit: cover;">
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <button class="carousel-control-prev" type="button" data-bs-target="#hotelCarousel" data-bs-slide="prev">
+                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Previous</span>
+                    </button>
+                    <button class="carousel-control-next" type="button" data-bs-target="#hotelCarousel" data-bs-slide="next">
+                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Next</span>
+                    </button>
+                </div>
+                {% endif %}
+
+                <div class="mb-4">
+                    <h4>Description</h4>
+                    <p>{{ hotel.Description|safe }}</p>
+                </div>
+
+                <div class="mb-4">
+                    <h4>Amenities</h4>
+                    <div class="row">
+                        {% for facility in hotel.HotelFacilities %}
+                        <div class="col-md-4 mb-2">
+                            <i class="bi bi-check-circle-fill text-success"></i> {{ facility }}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">Hotel Information</h5>
+                    </div>
+                    <div class="card-body">
+                        <p><strong>Check-in:</strong> {{ hotel.CheckInTime }}</p>
+                        <p><strong>Check-out:</strong> {{ hotel.CheckOutTime }}</p>
+                        <p><strong>Address:</strong><br>{{ hotel.Address }}</p>
+                        <p><strong>Phone:</strong> {{ hotel.PhoneNumber }}</p>
+                        {% if hotel.Email %}
+                        <p><strong>Email:</strong> {{ hotel.Email }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {% if hotel.Attractions %}
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Nearby Attractions</h5>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-unstyled">
+                            {% for attraction, distance in hotel.Attractions.items %}
+                            <li class="mb-2">
+                                <i class="bi bi-geo-alt-fill text-primary"></i>
+                                {{ attraction|safe }} - {{ distance|safe }}
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

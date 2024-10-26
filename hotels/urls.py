@@ -1,9 +1,12 @@
+# urls.py
 from django.urls import path
-from . import views
+from .views import HomeView, CitySelectionView, HotelSearchView, HotelDetailView
+
+app_name = 'hotels'
 
 urlpatterns = [
-    path('hotel-search', views.home, name='home'),
-    path('city-search/', views.city_search, name='city_search'),
-    path('hotels/<str:city_code>/', views.hotel_search, name='hotel_search'),
-    path('hotel/<str:hotel_code>/', views.hotel_details, name='hotel_details'),
+    path('', HomeView.as_view(), name='home'),
+    path('cities/', CitySelectionView.as_view(), name='city_selection'),
+    path('search/', HotelSearchView.as_view(), name='hotel_search'),
+    path('hotel/<str:hotel_code>/', HotelDetailView.as_view(), name='hotel_detail'),
 ]
