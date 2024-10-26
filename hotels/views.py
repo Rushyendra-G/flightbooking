@@ -80,8 +80,8 @@ class HotelSearchView(BaseHotelView):
             hotel_details_map = {hotel['HotelCode']: hotel for hotel in hotel_codes_response['Hotels']}
             
             available_hotels = []
-            if hotels.get("Hotels"):
-                for hotel in hotels["Hotels"]:
+            if hotels.get("HotelResult"):
+                for hotel in hotels["HotelResult"]:
                     hotel_code = hotel['HotelCode']
                     if hotel_code in hotel_details_map:
                         # Merge basic hotel info with availability data
@@ -113,7 +113,7 @@ class HotelSearchView(BaseHotelView):
         
         for i in range(room_count):
             room = {
-                "Adult": int(post_data.get(f'adults_{i}', 1)),
+                "Adults": int(post_data.get(f'adults_{i}', 1)),
                 "Children": int(post_data.get(f'children_{i}', 0)),
                 "ChildrenAges": []  # Could be enhanced to handle children ages
             }

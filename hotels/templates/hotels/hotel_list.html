@@ -28,148 +28,189 @@
         </div>
 
         <div class="row">
-            {% for hotel in hotels %}
-            <div class="col-md-6 mb-4">
-                <div class="card hotel-card h-100">
-                    {% if hotel.HotelPicture %}
-                    <img src="{{ hotel.HotelPicture }}" class="card-img-top" alt="{{ hotel.HotelName }}"
-                        style="height: 200px; object-fit: cover;">
-                    {% endif %}
-                    <div class="card-body">
-                        <h5 class="card-title">{{ hotel.HotelName }}</h5>
-
-                        <p class="card-text">{{ hotel.HotelAddress|truncatewords:20 }}</p>
-
-                        {% if hotel.HotelFacilities %}
-                        <div class="mb-3">
-                            <small class="text-muted">
-                                {% for facility in hotel.HotelFacilities|slice:":3" %}
-                                <span class="badge bg-light text-dark me-1">{{ facility }}</span>
-                                {% endfor %}
-                                {% if hotel.HotelFacilities|length > 3 %}
-                                <span class="badge bg-light text-dark">+{{ hotel.HotelFacilities|length|add:"-3" }}
-                                    more</span>
-                                {% endif %}
-                            </small>
-                        </div>
-                        {% endif %}
-
-                        {% if hotel.Price %}
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="text-success mb-0">Starting from</h6>
-                                <h5 class="text-success">{{ hotel.Price.CurrencyCode }} {{ hotel.Price.RoomPrice }}</h5>
-                            </div>
-                            <a href="{% url 'hotels:hotel_detail' hotel.HotelCode %}" class="btn btn-primary">View
-                                Details</a>
-                        </div>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-            {% empty %}
-            <div class="col-12">
-                {% if not hotels %}
-                <div class="alert alert-info">
-                    <div class="d-flex align-items-center">
-                        <i class="bi bi-info-circle me-2"></i>
-                        <span>No hotels found matching your criteria. Please try different search parameters.</span>
-                    </div>
-                </div>
-                {% endif %}
-
-                <div class="text-center mb-4">
-                    <h3>All Hotels</h3>
-                </div>
-
-                {% for hotel in all_hotels %}
-                <div class="card mb-4 shadow-sm hover-shadow transition">
-                    <div class="card-body">
-                        <div class="row">
-                            <!-- Hotel Name and Rating -->
-                            <div class="col-md-8">
-                                <h4 class="card-title mb-2">{{ hotel.HotelName }}</h4>
-                                <div class="mb-2">
-                                    {% for i in hotel.HotelRating|rjust:5 %}
-                                    {% if forloop.counter <= hotel.HotelRating %} <i
-                                        class="bi bi-star-fill text-warning"></i>
-                                        {% else %}
-                                        <i class="bi bi-star text-muted"></i>
+            {% if hotels %}
+                {% for hotel in hotels %}
+                    {% for room in hotel.Rooms %}
+                        <div class="col-12 col-md-6 mb-4">
+                            <div class="card shadow-sm">
+                                <div class="card-header border-0 bg-white">
+                                    <!-- Status Badges -->
+                                    <div class="d-flex gap-2">
+                                        <span class="badge {% if room.IsRefundable %}bg-success{% else %}bg-danger{% endif %}">
+                                            {% if room.IsRefundable %}Refundable{% else %}Non-Refundable{% endif %}
+                                        </span>
+                                        {% if room.MealType != "Room_Only" %}
+                                            <span class="badge bg-info">{{ room.MealType }}</span>
                                         {% endif %}
+                                    </div>
+                                </div>
+
+                                <div class="card-body">
+                                    <!-- Room Name -->
+                                    <h5 class="card-title mb-3">{{ room.Name.0 }}</h5>
+
+                                    <!-- Price -->
+                                    <div class="bg-light p-3 rounded mb-3">
+                                        <div class="d-flex justify-content-between align-items-baseline">
+                                            <div>
+                                                <small class="text-muted">Total Price</small>
+                                                <h4 class="mb-0 text-primary">{{ hotel.Currency }} {{ room.TotalFare }}</h4>
+                                                <small class="text-muted">+{{ room.TotalTax }} tax</small>
+                                            </div>
+                                            <div class="text-end">
+                                                <small class="text-muted">Per Night</small>
+                                                <div class="text-success">{{ hotel.Currency }} {{ room.DayRates.0.0.BasePrice }}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Inclusions -->
+                                    {% if room.Inclusion %}
+                                    <div class="mb-3">
+                                        <h6><i class="bi bi-check-circle me-2"></i>Included</h6>
+                                        <div class="d-flex flex-wrap gap-1">
+                                            <span class="badge bg-light text-dark" style="word-break: break-word;">{{ room.Inclusion|safe }}</span>
+                                        </div>
+                                    </div>  
+                                    {% endif %}
+
+                                    <!-- Promotions -->
+                                    {% if room.RoomPromotion %}
+                                    <div class="mb-3">
+                                        <h6><i class="bi bi-gift me-2"></i>Promotions</h6>
+                                        {% for promo in room.RoomPromotion %}
+                                            <small class="d-block text-success mb-1">
+                                                <i class="bi bi-check me-1"></i>{{ promo }}
+                                            </small>
                                         {% endfor %}
+                                    </div>
+                                    {% endif %}
+
+                                    <!-- Cancel Policy -->
+                                    <h6><i class="bi bi-clock-history me-2"></i>Cancel Policy</h6>
+                                    {% for policy in room.CancelPolicies %}
+                                        <small class="d-block text-danger mb-2">
+                                            {% if policy.ChargeType == 'Fixed' %}
+                                                {{ policy.CancellationCharge }} {{ hotel.Currency }}
+                                            {% else %}
+                                                {{ policy.CancellationCharge }}%
+                                            {% endif %}
+                                            after {{ policy.FromDate }}
+                                        </small>
+                                    {% endfor %}
+                                </div>
+
+                                <div class="card-footer bg-white">
+                                    <div class="mt-3 text-end">
+                                        <a href="{% url 'hotels:hotel_detail' hotel.HotelCode %}" class="btn btn-primary">
+                                            <i class="bi bi-arrow-right-circle me-2"></i>View Details
+                                        </a>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-
-                        <!-- Description -->
-                        <div class="my-3">
-                            <pre>{{ hotel }}</pre>
-                            {{ hotel.Description|safe|truncatewords:50 }}
-                        </div>
-
-                        <!-- Facilities -->
-                        <div class="mb-3">
-                            <h6 class="mb-2"><i class="bi bi-house-gear me-2"></i>Facilities:</h6>
-                            <div class="d-flex flex-wrap gap-2">
-                                {% for facility in hotel.HotelFacilities|slice:":10" %}
-                                <span class="badge bg-light text-dark">{{ facility }}</span>
-                                {% endfor %}
-                                {% if hotel.HotelFacilities|length > 10 %}
-                                <span class="badge bg-light text-dark">+{{ hotel.HotelFacilities|length|add:"-10" }} more</span>
-                                {% endif %}
-                            </div>
-                        </div>
-
-                        <!-- Contact and Location -->
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <div class="d-flex align-items-center mb-2">
-                                    <i class="bi bi-geo-alt me-2"></i>
-                                    <small>{{ hotel.Address }}</small>
-                                </div>
-                                <div class="d-flex align-items-center mb-2">
-                                    <i class="bi bi-pin me-2"></i>
-                                    <small>{{ hotel.PinCode }}</small>
-                                </div>
-                                <div class="d-flex align-items-center">
-                                    <i class="bi bi-globe me-2"></i>
-                                    <small>{{ hotel.CityName }}, {{ hotel.CountryName }} ({{ hotel.CountryCode }})</small>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                {% if hotel.PhoneNumber %}
-                                <div class="d-flex align-items-center mb-2">
-                                    <i class="bi bi-telephone me-2"></i>
-                                    <small>{{ hotel.PhoneNumber }}</small>
-                                </div>
-                                {% endif %}
-                                {% if hotel.FaxNumber %}
-                                <div class="d-flex align-items-center mb-2">
-                                    <i class="bi bi-printer me-2"></i>
-                                    <small>{{ hotel.FaxNumber }}</small>
-                                </div>
-                                {% endif %}
-                            </div>
-                        </div>
-
-                        <!-- Map -->
-                        {% if hotel.Map %}
-                        <div class="mt-3">
-                            {{ hotel.Map|safe }}
-                        </div>
-                        {% endif %}
-
-                        <!-- Action Button -->
-                        <div class="mt-3 text-end">
-                            <a href="{% url 'hotels:hotel_detail' hotel.HotelCode %}" class="btn btn-primary">
-                                <i class="bi bi-arrow-right-circle me-2"></i>View Details
-                            </a>
+                    {% endfor %}
+                {% endfor %}
+            {% else %}
+                <div class="col-12">
+                    <div class="alert alert-info">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-info-circle me-2"></i>
+                            <span>No hotels found matching your criteria. Please try different search parameters.</span>
                         </div>
                     </div>
+
+                    <div class="text-center mb-4">
+                        <h3>All Hotels</h3>
+                    </div>
+
+                    {% for hotel in all_hotels %}
+                        <div class="card mb-4 shadow-sm hover-shadow transition">
+                            <div class="card-body">
+                                <div class="row">
+                                    <!-- Hotel Name and Rating -->
+                                    <div class="col-md-8">
+                                        <h4 class="card-title mb-2">{{ hotel.HotelName }}</h4>
+                                        <div class="mb-2">
+                                            {% for i in hotel.HotelRating|rjust:5 %}
+                                                {% if forloop.counter <= hotel.HotelRating %}
+                                                    <i class="bi bi-star-fill text-warning"></i>
+                                                {% else %}
+                                                    <i class="bi bi-star text-muted"></i>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Description -->
+                                <div class="my-3">
+                                    {{ hotel.Description|safe|truncatewords:50 }}
+                                </div>
+
+                                <!-- Facilities -->
+                                <div class="mb-3">
+                                    <h6 class="mb-2"><i class="bi bi-house-gear me-2"></i>Facilities:</h6>
+                                    <div class="d-flex flex-wrap gap-2">
+                                        {% for facility in hotel.HotelFacilities|slice:":10" %}
+                                            <span class="badge bg-light text-dark">{{ facility }}</span>
+                                        {% endfor %}
+                                        {% if hotel.HotelFacilities|length > 10 %}
+                                            <span class="badge bg-light text-dark">+{{ hotel.HotelFacilities|length|add:"-10" }} more</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <!-- Contact and Location -->
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <div class="d-flex align-items-center mb-2">
+                                            <i class="bi bi-geo-alt me-2"></i>
+                                            <small>{{ hotel.Address }}</small>
+                                        </div>
+                                        <div class="d-flex align-items-center mb-2">
+                                            <i class="bi bi-pin me-2"></i>
+                                            <small>{{ hotel.PinCode }}</small>
+                                        </div>
+                                        <div class="d-flex align-items-center">
+                                            <i class="bi bi-globe me-2"></i>
+                                            <small>{{ hotel.CityName }}, {{ hotel.CountryName }} ({{ hotel.CountryCode }})</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        {% if hotel.PhoneNumber %}
+                                            <div class="d-flex align-items-center mb-2">
+                                                <i class="bi bi-telephone me-2"></i>
+                                                <small>{{ hotel.PhoneNumber }}</small>
+                                            </div>
+                                        {% endif %}
+                                        {% if hotel.FaxNumber %}
+                                            <div class="d-flex align-items-center mb-2">
+                                                <i class="bi bi-printer me-2"></i>
+                                                <small>{{ hotel.FaxNumber }}</small>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <!-- Map -->
+                                {% if hotel.Map %}
+                                    <div class="mt-3">
+                                        {{ hotel.Map|safe }}
+                                    </div>
+                                {% endif %}
+
+                                <!-- Action Button -->
+                                <div class="mt-3 text-end">
+                                    <a href="{% url 'hotels:hotel_detail' hotel.HotelCode %}" class="btn btn-primary">
+                                        <i class="bi bi-arrow-right-circle me-2"></i>View Details
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
                 </div>
-                {% endfor %}
-            </div>
-            {% endfor %}
+            {% endif %}
         </div>
     </div>
 </div>
