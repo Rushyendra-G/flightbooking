@@ -1,4 +1,5 @@
 # views.py
+import json
 from django.shortcuts import render
 from django.http import JsonResponse
 from .forms import (
@@ -107,6 +108,11 @@ def flight_search(request):
                     return render(request, 'results.html', {
                         'error': results['Response']['Error']['ErrorMessage']
                     })
+
+
+                with open('results.json', 'w') as file:
+                    file.truncate(0)  # Remove existing file content if any
+                    file.write(json.dumps(results, indent=4))
 
                 results = results['Response']['Results']
                 outbound_cards = []
